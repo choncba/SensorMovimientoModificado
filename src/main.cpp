@@ -14,28 +14,26 @@
 #define REC_PIN   2 // conectado al jumper para grabar el sensor rf a la central
 #define MOV_PIN   SENSE_PIN 
 
-uint8_t cuenta = 0;
-#define PULSOS 3
-
-void mov_count(){
-	cuenta++;
-}
+// Divisor resistivo en la salida
+// Vout = Vcc/(R1+R2)*R2 = 5v
+// c/Vcc=12v, R1=1k, R2 = 
 
 void setup()
 {
 	pinMode(LED,OUTPUT);
   	pinMode(OUT,OUTPUT);
 	pinMode(MOV_PIN,INPUT_PULLUP);
-	attachInterrupt(digitalPinToInterrupt(MOV_PIN), mov_count, LOW);
 }
 
 void loop()
 {
-	if(cuenta >= PULSOS){
+	if(digitalRead(MOV_PIN) == LOW){
 		digitalWrite(LED,HIGH);
 		digitalWrite(OUT,HIGH);
-		cuenta = 0;
 		delay(1000);
+		while(digitalRead(MOV_PIN) == LOW){
+			delay(100);
+		}
 		digitalWrite(LED,LOW);
 		digitalWrite(OUT,LOW);
 	}
