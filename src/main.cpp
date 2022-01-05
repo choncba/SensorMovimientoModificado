@@ -1,5 +1,6 @@
 // Firmware para Attiny13/85 en reemplazo del stock de los sensores de movimiento inhalámbricos
 // Hardware modificado para funcionar cableado
+// Branch de prueba dejando original la entrada del sensor y utilizando el pin digital por interrupcion
 #include <Arduino.h>
 
 // Pines			// Modificaciones en el hardware
@@ -9,48 +10,33 @@
 #define BUZZ_PIN  4 // Buzzer removido, Lo uso ahora para la salida a colector abierto
 #define OUT		  BUZZ_PIN
 #define VBAT_PIN  0 // Divisor para leer valor de batería, Sin usar
-#define SENSE_PIN 1 // Entrada movimiento, puenteado al pin PB2 que es una entrada A/D
-#define REC_PIN   2 // originalmente conectado al jumper para grabar el sensor rf a la central
-#define MOV_PIN   REC_PIN // También A1
+#define SENSE_PIN 1 // Entrada movimiento, este pin es digital, se trabaja por interrupcion
+#define REC_PIN   2 // conectado al jumper para grabar el sensor rf a la central
+#define MOV_PIN   SENSE_PIN 
+
+uint8_t cuenta = 0;
+#define PULSOS 3
+
+void mov_count(){
+	cuenta++;
+}
 
 void setup()
 {
 	pinMode(LED,OUTPUT);
   	pinMode(OUT,OUTPUT);
-	pinMode(MOV_PIN,INPUT);
+	pinMode(MOV_PIN,INPUT_PULLUP);
+	attachInterrupt(digitalPinToInterrupt(MOV_PIN), mov_count, LOW);
 }
 
 void loop()
 {
-	int val1 = 0;
-	int val2 = 0;
-	uint8_t i = 0;
-	// La salida del Operacional del sensor sin movimiento está estable aproximadamente a 2V,
-	// Cuando se produce movimiento va a 0 y hasta Vcc (3,6V), después vuelve al valor estable
-	for(i=0;i<10;i++)					// Promedio 10 lecturas para el primer valor
-	{
-		val1 += analogRead(MOV_PIN);
-		delay(20);
-	}
-	int prom1 = val1/10;
-	delay(500);							// Espero 500 mSeg para que el sensor se estabilice
-	for(i=0;i<10;i++)					// Promedio otras 10 lecturas para el segundo valor
-	{
-		val2 += analogRead(MOV_PIN);
-		delay(20);
-	}
-	int prom2 = val2/10;
-
-	if(abs(prom1-prom2)>100)			// En las pruebas, si la diferencia supera 100, detecto movimiento
-	{							
+	if(cuenta >= PULSOS){
 		digitalWrite(LED,HIGH);
-    	digitalWrite(OUT,HIGH);
-		delay(2000);
-	}
-	else
-	{
+		digitalWrite(OUT,HIGH);
+		cuenta = 0;
+		delay(1000);
 		digitalWrite(LED,LOW);
-    	digitalWrite(OUT,LOW);
+		digitalWrite(OUT,LOW);
 	}
-	
 }
